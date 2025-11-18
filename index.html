@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Painel Equipe Tiburcio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Equipe Tiburcio – Controle de Caixas e Apanhas</h1>
+
+    <div class="toolbar">
+      <button id="addDateBtn">➕ Adicionar data</button>
+      <button id="addPersonBtn">➕ Adicionar pessoa</button>
+      <button id="toggleNamesBtn" class="secondary">🔒 Nomes bloqueados</button>
+      <button id="resetBtn" class="secondary">Resetar painel</button>
+      <span class="info">Dados salvos apenas neste navegador (localStorage).</span>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr id="headerRowDates"></tr>
+          <tr id="headerRowMetrics"></tr>
+        </thead>
+        <tbody id="bodyRows"></tbody>
+      </table>
+    </div>
+
+    <div id="rankingBox" class="ranking-box"></div>
+  </div>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
