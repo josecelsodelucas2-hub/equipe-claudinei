@@ -155,7 +155,7 @@ td.editable:hover {
   margin-left: 6px;
 }
 
-/* Ranking / bloco de resumo */
+/* Ranking / resumo */
 .ranking-box {
   margin-top: 16px;
   padding: 10px 12px 12px;
@@ -189,3 +189,4 @@ td.editable:hover {
     font-size: 18px;
   }
 }
+
