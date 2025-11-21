@@ -44,6 +44,8 @@ const initialData = {
 };
 
 const STORAGE_KEY = "painel-equipe-tiburcio-v1";
+
+// ===== ESTADO =====
 let state = loadState();
 let lockNames = true;
 
@@ -57,19 +59,24 @@ const addDateBtn = document.getElementById("addDateBtn");
 const addPersonBtn = document.getElementById("addPersonBtn");
 const toggleNamesBtn = document.getElementById("toggleNamesBtn");
 const resetBtn = document.getElementById("resetBtn");
+const exportBtn = document.getElementById("exportBtn");
 
 let totalsRow = null;
 
 // ===== LOAD / SAVE =====
+function cloneInitial() {
+  return JSON.parse(JSON.stringify(initialData));
+}
+
 function loadState() {
   const txt = localStorage.getItem(STORAGE_KEY);
-  if (!txt) return structuredClone(initialData);
+  if (!txt) return cloneInitial();
   try {
     const parsed = JSON.parse(txt);
     if (!parsed.people || !parsed.dates) throw new Error();
     return parsed;
   } catch {
-    return structuredClone(initialData);
+    return cloneInitial();
   }
 }
 
@@ -133,11 +140,12 @@ function renderHeader() {
   thTotalAp.rowSpan = 2;
   headerRowDates.appendChild(thTotalAp);
 
+  // >>> Apanhas primeiro, Caixas depois na linha de métricas <<<
   state.dates.forEach(() => {
     const th1 = document.createElement("th");
-    th1.textContent = "Caixas";
+    th1.textContent = "Apanhas";
     const th2 = document.createElement("th");
-    th2.textContent = "Apanhas";
+    th2.textContent = "Caixas";
     headerRowMetrics.appendChild(th1);
     headerRowMetrics.appendChild(th2);
   });
@@ -165,8 +173,9 @@ function renderBody() {
     tr.appendChild(nameTd);
 
     state.dates.forEach((d, dateIndex) => {
-      tr.appendChild(createMetricCell(rowIndex, dateIndex, "caixas"));
+      // >>> Apanhas primeiro, Caixas depois nas células <<<
       tr.appendChild(createMetricCell(rowIndex, dateIndex, "apanhas"));
+      tr.appendChild(createMetricCell(rowIndex, dateIndex, "caixas"));
     });
 
     const totalCx = totalForPerson(rowIndex, "caixas");
@@ -254,16 +263,17 @@ function renderDayTotals() {
     const totCx = d.caixas.reduce((a, v) => a + (parseFloat(v) || 0), 0);
     const totAp = d.apanhas.reduce((a, v) => a + (parseFloat(v) || 0), 0);
 
-    const tdCx = document.createElement("td");
-    tdCx.textContent = totCx;
+    // >>> Apanhas na primeira coluna, Caixas na segunda <<<
     const tdAp = document.createElement("td");
     tdAp.textContent = totAp;
+    const tdCx = document.createElement("td");
+    tdCx.textContent = totCx;
 
-    totalsRow.appendChild(tdCx);
     totalsRow.appendChild(tdAp);
+    totalsRow.appendChild(tdCx);
   });
 
-  // colunas de total por pessoa (não se aplicam aqui)
+  // colunas de total por pessoa (não usadas aqui)
   totalsRow.appendChild(document.createElement("td"));
   totalsRow.appendChild(document.createElement("td"));
 
@@ -290,16 +300,84 @@ function renderRanking() {
   rankingBox.innerHTML = `
     <h2>🏆 Ranking da Produção</h2>
 
-    <h3>📦 Caixas</h3>
-    <ol>
-      ${topCx.map(p => `<li>${p.name} — ${p.total}</li>`).join("")}
-    </ol>
-
     <h3>🟣 Apanhas</h3>
     <ol>
       ${topAp.map(p => `<li>${p.name} — ${p.total}</li>`).join("")}
     </ol>
+
+    <h3>📦 Caixas</h3>
+    <ol>
+      ${topCx.map(p => `<li>${p.name} — ${p.total}</li>`).join("")}
+    </ol>
   `;
+}
+
+// ===== EXPORTAR PARA CSV =====
+function escapeCSV(value, sep) {
+  if (value == null) return "";
+  const str = String(value);
+  if (str.includes('"') || str.includes("\n") || str.includes(sep)) {
+    return '"' + str.replace(/"/g, '""') + '"';
+  }
+  return str;
+}
+
+function exportToCSV() {
+  const sep = ";"; // separador ; para Excel PT-BR
+  const rows = [];
+
+  // Cabeçalho (mantém Caixas depois Apanhas no arquivo)
+  const header = ["Nome"];
+  state.dates.forEach((d) => {
+    header.push(d.label + " - Caixas");
+    header.push(d.label + " - Apanhas");
+  });
+  header.push("Total Caixas");
+  header.push("Total Apanhas");
+  rows.push(header);
+
+  // Linhas por pessoa
+  state.people.forEach((name, rowIndex) => {
+    const row = [name];
+
+    state.dates.forEach((d) => {
+      row.push(d.caixas[rowIndex] || "");
+      row.push(d.apanhas[rowIndex] || "");
+    });
+
+    const totalCx = totalForPerson(rowIndex, "caixas");
+    const totalAp = totalForPerson(rowIndex, "apanhas");
+    row.push(totalCx);
+    row.push(totalAp);
+
+    rows.push(row);
+  });
+
+  // Linha de totais por dia
+  const totalRow = ["TOTAL DO DIA"];
+  state.dates.forEach((d) => {
+    const totCx = d.caixas.reduce((a, v) => a + (parseFloat(v) || 0), 0);
+    const totAp = d.apanhas.reduce((a, v) => a + (parseFloat(v) || 0), 0);
+    totalRow.push(totCx);
+    totalRow.push(totAp);
+  });
+  totalRow.push("");
+  totalRow.push("");
+  rows.push(totalRow);
+
+  const csvContent = rows
+    .map((row) => row.map((v) => escapeCSV(v, sep)).join(sep))
+    .join("\r\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "painel-equipe-tiburcio.csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // ===== CONTROLES =====
@@ -312,7 +390,7 @@ function renameDate(index) {
 }
 
 function removeDate(index) {
-  if (!confirm("Remover esta data (Caixas e Apanhas)?")) return;
+  if (!confirm("Remover esta data (Apanhas e Caixas)?")) return;
   state.dates.splice(index, 1);
   saveState();
   render();
@@ -366,11 +444,14 @@ toggleNamesBtn.addEventListener("click", () => {
 
 resetBtn.addEventListener("click", () => {
   if (!confirm("Resetar tudo para o padrão inicial?")) return;
-  state = structuredClone(initialData);
+  state = cloneInitial();
   saveState();
   lockNames = true;
   render();
 });
 
+exportBtn.addEventListener("click", exportToCSV);
+
 // ===== INICIA =====
 render();
+
