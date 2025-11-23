@@ -36,9 +36,9 @@ function makeMetric() {
 const initialData = {
   people: [...initialPeople],
   dates: [
-    { label: "10/11/2025", caixas: makeMetric(), apanhas: makeMetric() },
-    { label: "11/11/2025", caixas: makeMetric(), apanhas: makeMetric() },
-    { label: "12/11/2025", caixas: makeMetric(), apanhas: makeMetric() },
+    { label: "19/11/2025", caixas: makeMetric(), apanhas: makeMetric() },
+    { label: "20/11/2025", caixas: makeMetric(), apanhas: makeMetric() },
+    { label: "21/11/2025", caixas: makeMetric(), apanhas: makeMetric() },
     { label: "13/11/2025", caixas: makeMetric(), apanhas: makeMetric() }
   ]
 };
@@ -454,4 +454,5 @@ exportBtn.addEventListener("click", exportToCSV);
 
 // ===== INICIA =====
 render();
+
 
